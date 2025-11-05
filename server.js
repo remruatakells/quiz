@@ -23,7 +23,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ✅ Verify API key using external Zo Stream API
 async function verifyApiKey(key) {
   try {
-    const response = await fetch(`https://apis.zostream.in/api/verify?${key}`, {
+    const response = await fetch(`https://apis.zostream.in/api/quiz/verify?api_key=${encodeURIComponent(key)}`, {
+
       headers: { 'X-Master-Key': MASTER_API_KEY },
     });
     const data = await response.json();

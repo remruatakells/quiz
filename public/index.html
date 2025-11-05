@@ -142,7 +142,7 @@
 
             try {
                 // 🔍 Verify with your API
-                const res = await fetch(`https://apis.zostream.in/api/quiz/verify?${key}`, {
+                const res = await fetch(`https://apis.zostream.in/api/quiz/verify?api_key=${encodeURIComponent(key)}`, {
                     headers: { "X-Api-Key": "ZST_MASTER_SUPERSECRET" } // replace with your real master key
                 });
 
