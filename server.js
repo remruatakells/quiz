@@ -34,7 +34,15 @@ async function verifyApiKey(key) {
     }
 
     const data = await response.json();
-    return data.status === 'ok';
+    console.log('🔍 verifyApiKey response:', data); // log to confirm
+
+    // accept both lowercase and uppercase keys like "ok", "OK"
+    if (data.status && data.status.toLowerCase() === 'ok') {
+      return true;
+    }
+
+    console.warn('❌ Invalid status in response:', data);
+    return false;
   } catch (err) {
     console.error('API key check failed:', err);
     return false;
@@ -50,28 +58,22 @@ app.get('/', (_req, res) =>
 app.get('/control/:key', async (req, res) => {
   const valid = await verifyApiKey(req.params.key);
   if (!valid)
-    return res
-      .status(403)
-      .send('<h1>403 Forbidden</h1><p>Invalid API key</p>');
+    return res.status(403).send('<h1>403 Forbidden</h1><p>Invalid API key</p>');
   res.sendFile(path.resolve('./public/control.html'));
 });
 
 app.get('/overlay/:key', async (req, res) => {
   const valid = await verifyApiKey(req.params.key);
   if (!valid)
-    return res
-      .status(403)
-      .send('<h1>403 Forbidden</h1><p>Invalid API key</p>');
-  res.sendFile(path.join('./public/overlay.html'));
+    return res.status(403).send('<h1>403 Forbidden</h1><p>Invalid API key</p>');
+  res.sendFile(path.resolve('./public/overlay.html'));
 });
 
 app.get('/vote/:key', async (req, res) => {
   const valid = await verifyApiKey(req.params.key);
   if (!valid)
-    return res
-      .status(403)
-      .send('<h1>403 Forbidden</h1><p>Invalid API key</p>');
-  res.sendFile(path.join('./public/vote.html'));
+    return res.status(403).send('<h1>403 Forbidden</h1><p>Invalid API key</p>');
+  res.sendFile(path.resolve('./public/vote.html'));
 });
 
 // ✅ Public API endpoint for verifying key from frontend
