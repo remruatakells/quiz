@@ -85,22 +85,27 @@
         }
 
         .links {
-            margin-top: 20px;
+            margin-top: 24px;
             display: none;
             flex-direction: column;
+            gap: 10px;
+        }
+
+        .link-item a {
+            flex: 1;
+            text-align: left;
+            text-decoration: none;
+            color: var(--ink);
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
             gap: 8px;
         }
 
-        .links a {
-            display: block;
-            text-decoration: none;
-            background: #1b2843;
-            border-radius: 8px;
-            padding: 10px;
-            color: var(--ink);
-            font-weight: 600;
-            border: 1px solid rgba(255, 255, 255, .1);
-            transition: background .25s;
+        .link-item:hover {
+            background: #243659;
+            transform: translateY(-2px);
         }
 
         .links a:hover {
@@ -111,10 +116,11 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: #1b2843;
-            border-radius: 8px;
-            padding: 10px 12px;
-            border: 1px solid rgba(255, 255, 255, .1);
+            background: #182236;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 12px 14px;
+            transition: background 0.25s, transform 0.15s;
         }
 
         .link-item a {
@@ -130,14 +136,13 @@
             border: none;
             color: var(--muted);
             font-size: 18px;
-            margin-left: 10px;
             cursor: pointer;
-            transition: color .2s, transform .1s;
+            transition: color 0.2s ease, transform 0.1s ease;
         }
 
         .copy-btn:hover {
             color: var(--accent);
-            transform: scale(1.1);
+            transform: scale(1.15);
         }
     </style>
 </head>
@@ -196,7 +201,7 @@
                     .catch(() => alert("Failed to copy link"));
             });
         });
-        
+
         btn.onclick = async () => {
             const key = input.value.trim();
             if (!key) return;
