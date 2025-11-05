@@ -23,8 +23,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ✅ Verify API key using external Zo Stream API
 async function verifyApiKey(key) {
   try {
-    const response = await fetch(`https://apis.zostream.in/api/quiz/verify?api_key=${encodeURIComponent(key)}`, {
-    });
+    if (!key) return false;
+
+    const url = `https://apis.zostream.in/api/quiz/verify?api_key=${encodeURIComponent(key)}`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      console.warn('Verification failed:', response.status, response.statusText);
+      return false;
+    }
+
     const data = await response.json();
     return data.status === 'ok';
   } catch (err) {

@@ -141,29 +141,42 @@
             links.style.display = "none";
 
             try {
-                // 🔍 Verify with your API
-                const res = await fetch(`https://apis.zostream.in/api/quiz/verify?api_key=${encodeURIComponent(key)}`, {
-                   
-                });
+                // 🔍 Verify with your API (no headers)
+                const res = await fetch(`https://apis.zostream.in/api/quiz/verify?api_key=${encodeURIComponent(key)}`);
+
+                if (!res.ok) {
+                    msg.textContent = `Server error (${res.status})`;
+                    msg.className = "msg error";
+                    return;
+                }
 
                 const data = await res.json();
+
                 if (data.status === 'ok') {
-                    msg.textContent = `Welcome ${data.user.name}`;
+                    // ✅ API key valid
+                    const userName = data.user?.name || "Authorized User";
+                    msg.textContent = `Welcome ${userName}`;
                     msg.className = 'msg';
                     links.style.display = 'flex';
 
                     // 👇 Use API key path instead of query param
-                    control.href = `/control/${key}`;
-                    overlay.href = `/overlay/${key}`;
-                    vote.href = `/vote/${key}`;
+                    controlLink.href = `/control/${key}`;
+                    overlayLink.href = `/overlay/${key}`;
+                    voteLink.href = `/vote/${key}`;
                 } else {
-                    msg.textContent = data.message || "Invalid key.";
+                    // ❌ Invalid key
+                    msg.textContent = data.message || "Invalid API key.";
                     msg.className = "msg error";
+                    links.style.display = 'none';
                 }
             } catch (err) {
+                // 🧱 Network or CORS error
+                console.error('Error contacting server:', err);
                 msg.textContent = "Error contacting server.";
                 msg.className = "msg error";
+                links.style.display = 'none';
             }
+
         };
     </script>
 </body>
