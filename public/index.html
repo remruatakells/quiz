@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Zo Stream Quiz Access</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --card: #111827e6;
+      --ink: #eaf0ff;
+      --muted: #9aa6c0;
+      --accent: #6aa7ff;
+      --danger: #ff5d7a;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: var(--radius);
+      padding: 28px;
+      width: min(400px, 90%);
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,.4);
+    }
+
+    h1 {
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: #182236;
+      color: var(--ink);
+      font-size: 15px;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 14px;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+
+    button:hover { background: #4e93ff; }
+
+    .msg {
+      margin-top: 10px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .error { color: var(--danger); }
+
+    .links {
+      margin-top: 20px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .links a {
+      display: block;
+      text-decoration: none;
+      background: #1b2843;
+      border-radius: 8px;
+      padding: 10px;
+      color: var(--ink);
+      font-weight: 600;
+      border: 1px solid rgba(255,255,255,.1);
+      transition: background .25s;
+    }
+
+    .links a:hover {
+      background: #243659;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h1>Zo Stream Quiz Access</h1>
+    <input id="apiKeyInput" type="text" placeholder="Enter your API key..." />
+    <button id="checkBtn">Check Access</button>
+    <div id="msg" class="msg"></div>
+
+    <div class="links" id="links">
+      <a id="controlLink" target="_blank">🎛 Control Panel</a>
+      <a id="overlayLink" target="_blank">🎥 Overlay Display</a>
+      <a id="voteLink" target="_blank">📱 Vote Page</a>
+    </div>
+  </div>
+
+  <script>
+    const input = document.getElementById('apiKeyInput');
+    const btn = document.getElementById('checkBtn');
+    const msg = document.getElementById('msg');
+    const links = document.getElementById('links');
+    const controlLink = document.getElementById('controlLink');
+    const overlayLink = document.getElementById('overlayLink');
+    const voteLink = document.getElementById('voteLink');
+
+    btn.onclick = async () => {
+      const key = input.value.trim();
+      if (!key) return;
+
+      msg.textContent = "Checking key...";
+      msg.className = "msg";
+      links.style.display = "none";
+
+      try {
+        // 🔍 Verify with your API
+        const res = await fetch(`https://apis.zostream.in/api/verify/${key}`, {
+          headers: { "X-Master-Key": "ZST_MASTER_SUPERSECRET" } // replace with your real master key
+        });
+
+        const data = await res.json();
+        if (data.status === 'ok') {
+          msg.textContent = `Welcome, ${data.user.name} (${data.user.role})`;
+          msg.className = "msg";
+          links.style.display = "flex";
+
+          // Set dynamic links with key
+          controlLink.href = `/control/${key}`;
+          overlayLink.href = `/overlay/${key}`;
+          voteLink.href = `/vote/${key}`;
+        } else {
+          msg.textContent = data.message || "Invalid key.";
+          msg.className = "msg error";
+        }
+      } catch (err) {
+        msg.textContent = "Error contacting server.";
+        msg.className = "msg error";
+      }
+    };
+  </script>
+</body>
+</html>

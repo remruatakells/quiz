@@ -20,6 +20,10 @@ const quizzes = JSON.parse(
 let activeQuizId = quizzes[0]?.id;
 let currentIndex = 0;
 
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 app.use(express.static('public'));
 app.use(express.json());
 
