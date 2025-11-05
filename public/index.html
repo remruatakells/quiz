@@ -117,28 +117,27 @@
             border: 1px solid rgba(255, 255, 255, .1);
         }
 
-        .copy-btn {
-            background: var(--accent);
-            border: none;
-            color: #fff;
-            font-size: 13px;
-            font-weight: 600;
-            border-radius: 6px;
-            padding: 6px 10px;
-            cursor: pointer;
-            transition: background .2s;
-        }
-
-        .copy-btn:hover {
-            background: #4e93ff;
-        }
-
         .link-item a {
             flex: 1;
             color: var(--ink);
             text-decoration: none;
             font-weight: 600;
             overflow-wrap: anywhere;
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            font-size: 18px;
+            margin-left: 10px;
+            cursor: pointer;
+            transition: color .2s, transform .1s;
+        }
+
+        .copy-btn:hover {
+            color: var(--accent);
+            transform: scale(1.1);
         }
     </style>
 </head>
@@ -153,15 +152,21 @@
         <div class="links" id="links">
             <div class="link-item">
                 <a id="controlLink" target="_blank">🎛 Control Panel</a>
-                <button class="copy-btn" data-target="controlLink">Copy</button>
+                <button class="copy-btn" data-target="controlLink" title="Copy link">
+                    📋
+                </button>
             </div>
             <div class="link-item">
                 <a id="overlayLink" target="_blank">🎥 Overlay Display</a>
-                <button class="copy-btn" data-target="overlayLink">Copy</button>
+                <button class="copy-btn" data-target="overlayLink" title="Copy link">
+                    📋
+                </button>
             </div>
             <div class="link-item">
                 <a id="voteLink" target="_blank">📱 Vote Page</a>
-                <button class="copy-btn" data-target="voteLink">Copy</button>
+                <button class="copy-btn" data-target="voteLink" title="Copy link">
+                    📋
+                </button>
             </div>
         </div>
     </div>
@@ -175,7 +180,7 @@
         const overlayLink = document.getElementById('overlayLink');
         const voteLink = document.getElementById('voteLink');
 
-        // 🔗 Copy button functionality
+        // 📋 Copy button logic
         document.querySelectorAll('.copy-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const targetId = btn.getAttribute('data-target');
@@ -184,13 +189,14 @@
 
                 navigator.clipboard.writeText(url)
                     .then(() => {
-                        btn.textContent = "Copied!";
-                        setTimeout(() => btn.textContent = "Copy", 1500);
+                        const originalIcon = btn.textContent;
+                        btn.textContent = '✅';
+                        setTimeout(() => btn.textContent = originalIcon, 1500);
                     })
-                    .catch(() => alert("Failed to copy"));
+                    .catch(() => alert("Failed to copy link"));
             });
         });
-
+        
         btn.onclick = async () => {
             const key = input.value.trim();
             if (!key) return;
