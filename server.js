@@ -53,7 +53,7 @@ app.get('/control/:key', async (req, res) => {
     return res
       .status(403)
       .send('<h1>403 Forbidden</h1><p>Invalid API key</p>');
-  res.sendFile(path.join(__dirname, 'public', 'control.html'));
+  res.sendFile(path.resolve('./public/control.html'));
 });
 
 app.get('/overlay/:key', async (req, res) => {
@@ -62,7 +62,7 @@ app.get('/overlay/:key', async (req, res) => {
     return res
       .status(403)
       .send('<h1>403 Forbidden</h1><p>Invalid API key</p>');
-  res.sendFile(path.join(__dirname, 'public', 'overlay.html'));
+  res.sendFile(path.join('./public/overlay.html'));
 });
 
 app.get('/vote/:key', async (req, res) => {
@@ -71,7 +71,7 @@ app.get('/vote/:key', async (req, res) => {
     return res
       .status(403)
       .send('<h1>403 Forbidden</h1><p>Invalid API key</p>');
-  res.sendFile(path.join(__dirname, 'public', 'vote.html'));
+  res.sendFile(path.join('./public/vote.html'));
 });
 
 // ✅ Public API endpoint for verifying key from frontend
