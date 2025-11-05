@@ -1,0 +1,283 @@
+:root {
+  --bg: transparent;
+  --card: rgba(10, 12, 18, 0.94);
+  --ink: #eaf0ff;
+  --muted: #9aa6c0;
+  --accent: #6aa7ff;
+  --accent2: #8b5cf6;
+  --success: #38d39f;
+  --danger: #ff5d7a;
+  --radius: 18px;
+}
+
+* {
+  box-sizing: border-box
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+}
+
+.overlay {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: end center;
+  padding: 3vh 2vw;
+}
+
+.quiz-card {
+  width: min(1080px, 92vw);
+  background: radial-gradient(120% 140% at 80% -20%, rgba(106, 167, 255, .18), rgba(139, 92, 246, .18) 30%, rgba(10, 12, 18, .55) 60%), var(--card);
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 22px;
+  backdrop-filter: blur(10px) saturate(120%);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .3);
+}
+
+.quiz-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  padding: 22px 24px 10px;
+  align-items: center;
+}
+
+.question {
+  font-size: clamp(22px, 3.4vw, 42px);
+  font-weight: 800;
+  line-height: 1.18;
+}
+
+.timer {
+  position: relative;
+  width: clamp(54px, 6.4vw, 78px);
+  aspect-ratio: 1;
+}
+
+.timer svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.ring-bg {
+  stroke: rgba(255, 255, 255, .2);
+  stroke-width: 8;
+}
+
+.ring {
+  stroke: var(--accent);
+  stroke-linecap: round;
+  stroke-width: 8;
+  stroke-dasharray: 276;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1s linear;
+}
+
+.time-left {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: clamp(16px, 2vw, 22px);
+}
+
+.quiz-body {
+  padding: 6px 24px 22px;
+}
+
+.options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width:720px) {
+  .options {
+    grid-template-columns: 1fr;
+  }
+}
+
+.option {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .08);
+}
+
+.letter {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 14px;
+  border-radius: 999px;
+  color: #0b0e14;
+  background: linear-gradient(180deg, var(--ink), #b8c7ff);
+}
+
+.text {
+  font-size: clamp(14px, 1.6vw, 18px);
+  line-height: 1.35;
+}
+
+.metric {
+  font-size: clamp(12px, 1.4vw, 16px);
+  color: var(--muted);
+}
+
+.option {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .08);
+  overflow: hidden;
+  /* 👈 this clips child background */
+  isolation: isolate;
+  /* 👈 ensures z-index works cleanly */
+}
+
+.option.correct {
+  background: linear-gradient(180deg, rgba(56, 211, 159, .20), rgba(56, 211, 159, .06));
+  border-color: rgba(56, 211, 159, .38);
+}
+
+.option.wrong {
+  background: linear-gradient(180deg, rgba(255, 93, 122, .18), rgba(255, 93, 122, .05));
+  border-color: rgba(255, 93, 122, .36);
+  opacity: .92;
+}
+
+.option .bar {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(106, 167, 255, .22), rgba(139, 92, 246, .18));
+  transition: width .6s ease;
+}
+
+.option.correct .bar {
+  background: linear-gradient(90deg, rgba(56, 211, 159, .24), rgba(56, 211, 159, .14));
+}
+
+.option.selected {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-color: var(--accent);
+}
+
+.quiz-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 24px 20px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .10);
+  background: rgba(255, 255, 255, .04);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px rgba(106, 167, 255, .22);
+}
+
+.scale-sm .quiz-card {
+  transform-origin: bottom center;
+  scale: .92;
+}
+
+/* animations */
+@keyframes correctPulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(56, 211, 159, 0);
+  }
+
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 18px rgba(56, 211, 159, .7);
+  }
+}
+
+@keyframes wrongShake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20%,
+  60% {
+    transform: translateX(-6px);
+  }
+
+  40%,
+  80% {
+    transform: translateX(6px);
+  }
+}
+
+@keyframes fadeCorrect {
+  from {
+    background: rgba(56, 211, 159, .25);
+  }
+
+  to {
+    background: rgba(56, 211, 159, .1);
+  }
+}
+
+@keyframes fadeWrong {
+  from {
+    background: rgba(255, 93, 122, .25);
+  }
+
+  to {
+    background: rgba(116, 107, 108, 0.1);
+  }
+}
+
+/* Apply during reveal */
+.option.correct {
+  animation: correctPulse 1s ease-out 2, fadeCorrect 1s forwards;
+  border-color: rgba(56, 211, 159, .55);
+}
+
+.option.wrong {
+  animation: wrongShake 0.6s ease, fadeWrong 1s forwards;
+  border-color: rgba(255, 93, 122, .55);
+  opacity: 0.8;
+}

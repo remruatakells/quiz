@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>OBS Quiz Overlay</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/overlay.css" />
+</head>
+<body>
+  <div class="overlay scale-sm">
+    <div class="quiz-card">
+      <div class="quiz-head">
+        <div class="question" id="q">Loading…</div>
+        <div class="timer">
+          <svg viewBox="0 0 100 100">
+            <circle class="ring-bg" cx="50" cy="50" r="44" fill="none"></circle>
+            <circle class="ring"    cx="50" cy="50" r="44" fill="none"></circle>
+          </svg>
+          <div class="time-left" id="time">0</div>
+        </div>
+      </div>
+
+      <div class="quiz-body">
+        <div class="options" id="opts">
+          <!-- injected -->
+        </div>
+      </div>
+
+      <div class="quiz-foot">
+        <div class="badge"><span class="dot"></span> Live Quiz</div>
+        <div class="status" id="status">—</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/overlay.js"></script>
+</body>
+</html>

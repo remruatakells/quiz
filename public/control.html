@@ -1,0 +1,149 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>Quiz Control</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/control.css" />
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div>
+          <label>Active Quiz</label>
+          <select id="quizSelect"></select>
+        </div>
+        <button id="addQuizBtn" class="accent" style="height:36px;">+ Add Quiz</button>
+      </div>
+
+      <h2>Question Editor</h2>
+      <label>Question</label>
+      <textarea id="question" rows="2" placeholder="Type your question…"></textarea>
+
+      <div class="row">
+        <div>
+          <label>Option A</label>
+          <input id="o0" type="text" placeholder="Option A" />
+        </div>
+        <div>
+          <label>Option B</label>
+          <input id="o1" type="text" placeholder="Option B" />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Option C</label>
+          <input id="o2" type="text" placeholder="Option C" />
+        </div>
+        <div>
+          <label>Option D</label>
+          <input id="o3" type="text" placeholder="Option D" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Correct Answer</label>
+          <select id="correct">
+            <option value="">— none —</option>
+            <option value="0">A</option>
+            <option value="1">B</option>
+            <option value="2">C</option>
+            <option value="3">D</option>
+          </select>
+        </div>
+        <div>
+          <label>Timer (seconds)</label>
+          <input id="seconds" type="number" min="3" max="300" value="15" />
+        </div>
+      </div>
+
+      <div class="row-3">
+        <button id="apply">Apply</button>
+        <button id="next">Next</button>
+        <button id="reset" class="danger">Reset</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Live Controls</h2>
+      <div class="row-3">
+        <button id="start" class="accent">Start</button>
+        <button id="lock">Lock</button>
+        <button id="unlock">Unlock</button>
+      </div>
+      <div class="row-3">
+        <button id="reveal" class="success">Reveal</button>
+        <button id="refresh">Refresh State</button>
+        <button id="copy-vote-url">Copy Vote URL</button>
+      </div>
+
+      <p class="help">
+        Hotkeys: <b>R</b>=Reveal, <b>N</b>=Next, <b>S</b>=Start, <b>L</b>=Lock, <b>U</b>=Unlock
+      </p>
+
+      <div class="sep"></div>
+      <div id="liveStatus" class="status">—</div>
+    </div>
+  </div>
+
+  <!-- Add Quiz Modal -->
+  <div id="quizModal"
+    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;align-items:center;justify-content:center;">
+    <div style="background:#141b2a;padding:20px;border-radius:12px;width:360px;max-height:90vh;overflow:auto;">
+      <h3 style="margin-top:0;">Add New Quiz</h3>
+
+      <label>Quiz Title</label>
+      <input type="text" id="newQuizTitle"
+        style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#0d1320;color:white;margin-bottom:10px;">
+
+      <label>First Question</label>
+      <textarea id="newQuestion" rows="2"
+        style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#0d1320;color:white;margin-bottom:10px;"></textarea>
+
+      <label>Options</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <input id="newO0" type="text" placeholder="Option A"
+          style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#0d1320;color:white;">
+        <input id="newO1" type="text" placeholder="Option B"
+          style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#0d1320;color:white;">
+        <input id="newO2" type="text" placeholder="Option C"
+          style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#0d1320;color:white;">
+        <input id="newO3" type="text" placeholder="Option D"
+          style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#0d1320;color:white;">
+      </div>
+
+      <label>Correct Answer</label>
+      <select id="newCorrect"
+        style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#0d1320;color:white;margin-bottom:10px;">
+        <option value="">— none —</option>
+        <option value="0">A</option>
+        <option value="1">B</option>
+        <option value="2">C</option>
+        <option value="3">D</option>
+      </select>
+
+      <label>Timer (seconds)</label>
+      <input id="newSeconds" type="number" value="15" min="3" max="300"
+        style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#0d1320;color:white;margin-bottom:15px;">
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;">
+        <button id="cancelAdd" style="padding:8px 12px;">Cancel</button>
+        <button id="saveQuiz" class="accent" style="padding:8px 12px;">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // If you set ADMIN_KEY in .env, load this page with ?key=YOUR_KEY
+    const params = new URLSearchParams(location.search);
+    const adminKey = params.get('key') || '';
+  </script>
+  <script src="/control.js"></script>
+</body>
+
+</html>

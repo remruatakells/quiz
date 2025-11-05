@@ -1,0 +1,140 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>Vote</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --card: #111827e6;
+      --ink: #eaf0ff;
+      --muted: #8a95b5;
+      --accent: #6aa7ff;
+      --success: #38d39f;
+      --danger: #ff5d7a;
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, Roboto;
+    }
+
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 24px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, .06);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: 0 4px 18px rgba(0,0,0,.4);
+      backdrop-filter: blur(10px);
+    }
+
+    h1 {
+      font-size: 22px;
+      margin: 0 0 6px;
+    }
+
+    p {
+      margin: 6px 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    @media (max-width:540px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    button {
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, .12);
+      background: #182236;
+      color: var(--ink);
+      font-weight: 700;
+      font-size: 15px;
+      transition: all .25s ease;
+    }
+
+    button:hover:not(:disabled) {
+      background: #1c2944;
+      transform: scale(1.03);
+    }
+
+    button.selected {
+      outline: 2px solid var(--accent);
+      background: #1b2a4a;
+    }
+
+    button.correct {
+      border-color: var(--success);
+      animation: correctPulse 1s ease-in-out 2;
+    }
+
+    button.wrong {
+      border-color: var(--danger);
+      animation: wrongShake 0.6s ease;
+    }
+
+    button:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .status {
+      font-size: 14px;
+      color: #cdd7f7;
+    }
+
+    /* Animations */
+    @keyframes correctPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 rgba(56,211,159,0); }
+      50% { transform: scale(1.05); box-shadow: 0 0 15px rgba(56,211,159,.7); }
+    }
+
+    @keyframes wrongShake {
+      0%,100% { transform: translateX(0); }
+      20%,60% { transform: translateX(-6px); }
+      40%,80% { transform: translateX(6px); }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1 id="q">Loading…</h1>
+      <p id="meta">—</p>
+      <div class="grid" id="btns"></div>
+    </div>
+    <div class="card">
+      <div id="status" class="status">Waiting…</div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/vote.js"></script>
+</body>
+
+</html>
