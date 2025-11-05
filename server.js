@@ -9,6 +9,14 @@ const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
+
+app.use(express.static('public'));
+app.use(express.json());
+
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 const io = new Server(server, { cors: { origin: '*' } });
 
 const PORT = process.env.PORT || 3000;
@@ -19,15 +27,6 @@ const quizzes = JSON.parse(
 );
 let activeQuizId = quizzes[0]?.id;
 let currentIndex = 0;
-
-app.get('/', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-app.use(express.static('public'));
-app.use(express.json());
-
-app.use(express.static('public'));
 
 // Pretty routes:
 app.get('/overlay', (_req, res) =>
