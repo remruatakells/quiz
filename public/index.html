@@ -106,6 +106,40 @@
         .links a:hover {
             background: #243659;
         }
+
+        .link-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #1b2843;
+            border-radius: 8px;
+            padding: 10px 12px;
+            border: 1px solid rgba(255, 255, 255, .1);
+        }
+
+        .copy-btn {
+            background: var(--accent);
+            border: none;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            padding: 6px 10px;
+            cursor: pointer;
+            transition: background .2s;
+        }
+
+        .copy-btn:hover {
+            background: #4e93ff;
+        }
+
+        .link-item a {
+            flex: 1;
+            color: var(--ink);
+            text-decoration: none;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
     </style>
 </head>
 
@@ -117,9 +151,18 @@
         <div id="msg" class="msg"></div>
 
         <div class="links" id="links">
-            <a id="controlLink" target="_blank">🎛 Control Panel</a>
-            <a id="overlayLink" target="_blank">🎥 Overlay Display</a>
-            <a id="voteLink" target="_blank">📱 Vote Page</a>
+            <div class="link-item">
+                <a id="controlLink" target="_blank">🎛 Control Panel</a>
+                <button class="copy-btn" data-target="controlLink">Copy</button>
+            </div>
+            <div class="link-item">
+                <a id="overlayLink" target="_blank">🎥 Overlay Display</a>
+                <button class="copy-btn" data-target="overlayLink">Copy</button>
+            </div>
+            <div class="link-item">
+                <a id="voteLink" target="_blank">📱 Vote Page</a>
+                <button class="copy-btn" data-target="voteLink">Copy</button>
+            </div>
         </div>
     </div>
 
@@ -131,6 +174,22 @@
         const controlLink = document.getElementById('controlLink');
         const overlayLink = document.getElementById('overlayLink');
         const voteLink = document.getElementById('voteLink');
+
+        // 🔗 Copy button functionality
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetId = btn.getAttribute('data-target');
+                const linkEl = document.getElementById(targetId);
+                const url = linkEl.href;
+
+                navigator.clipboard.writeText(url)
+                    .then(() => {
+                        btn.textContent = "Copied!";
+                        setTimeout(() => btn.textContent = "Copy", 1500);
+                    })
+                    .catch(() => alert("Failed to copy"));
+            });
+        });
 
         btn.onclick = async () => {
             const key = input.value.trim();
@@ -163,6 +222,8 @@
                     controlLink.href = `/control/${key}`;
                     overlayLink.href = `/overlay/${key}`;
                     voteLink.href = `/vote/${key}`;
+                    links.style.display = 'flex';
+
                 } else {
                     // ❌ Invalid key
                     msg.textContent = data.message || "Invalid API key.";
