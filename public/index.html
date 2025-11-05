@@ -157,21 +157,17 @@
         <div class="links" id="links">
             <div class="link-item">
                 <a id="controlLink" target="_blank">🎛 Control Panel</a>
-                <button class="copy-btn" data-target="controlLink" title="Copy link">
-                    📋
-                </button>
+                <button class="copy-btn" data-target="controlLink" title="Copy link">📋</button>
             </div>
+
             <div class="link-item">
                 <a id="overlayLink" target="_blank">🎥 Overlay Display</a>
-                <button class="copy-btn" data-target="overlayLink" title="Copy link">
-                    📋
-                </button>
+                <button class="copy-btn" data-target="overlayLink" title="Copy link">📋</button>
             </div>
+
             <div class="link-item">
                 <a id="voteLink" target="_blank">📱 Vote Page</a>
-                <button class="copy-btn" data-target="voteLink" title="Copy link">
-                    📋
-                </button>
+                <button class="copy-btn" data-target="voteLink" title="Copy link">📋</button>
             </div>
         </div>
     </div>
@@ -201,6 +197,18 @@
                     .catch(() => alert("Failed to copy link"));
             });
         });
+
+        navigator.clipboard.writeText(url)
+            .then(() => {
+                const originalIcon = btn.textContent;
+                btn.textContent = '✅';
+                btn.style.transform = 'scale(1.2)';
+                setTimeout(() => {
+                    btn.textContent = originalIcon;
+                    btn.style.transform = 'scale(1)';
+                }, 1200);
+            })
+            .catch(() => alert("Failed to copy link"));
 
         btn.onclick = async () => {
             const key = input.value.trim();
