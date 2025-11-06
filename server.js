@@ -5,7 +5,6 @@ const express = require('express');
 const http = require('http');
 const fs = require('fs');
 const { Server } = require('socket.io');
-
 const fetch = require('node-fetch');
 
 const app = express();
@@ -16,32 +15,29 @@ const PORT = process.env.PORT || 3000;
 const ADMIN_KEY = process.env.ADMIN_KEY || '';
 const MASTER_API_KEY = process.env.MASTER_API_KEY;
 
+// ✅ Load quizzes first (before defining routes)
+const dataPath = path.join(__dirname, 'data', 'quizzes.json');
+const quizzes = fs.existsSync(dataPath)
+  ? JSON.parse(fs.readFileSync(dataPath, 'utf8'))
+  : [];
+
+let activeQuizId = quizzes[0]?.id || null;
+let currentIndex = 0;
+
+// ✅ Middlewares
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ✅ Verify API key using external Zo Stream API
+// ✅ Verify API key with Zo Stream
 async function verifyApiKey(key) {
   try {
     if (!key) return false;
-
     const url = `https://apis.zostream.in/api/quiz/verify?api_key=${encodeURIComponent(key)}`;
     const response = await fetch(url);
-
-    if (!response.ok) {
-      console.warn('Verification failed:', response.status, response.statusText);
-      return false;
-    }
-
+    if (!response.ok) return false;
     const data = await response.json();
-    console.log('🔍 verifyApiKey response:', data); // log to confirm
-
-    // accept both lowercase and uppercase keys like "ok", "OK"
-    if (data.status && data.status.toLowerCase() === 'ok') {
-      return true;
-    }
-
-    console.warn('❌ Invalid status in response:', data);
-    return false;
+    console.log('🔍 verifyApiKey response:', data);
+    return data.status?.toLowerCase() === 'ok';
   } catch (err) {
     console.error('API key check failed:', err);
     return false;
@@ -53,41 +49,37 @@ app.get('/', (_req, res) =>
   res.sendFile(path.join(__dirname, 'public', 'index.html'))
 );
 
-// ✅ Secure routes (check API key before serving pages)
-app.get('/control/:key', async (req, res) => {
-  const valid = await verifyApiKey(req.params.key);
-  if (!valid)
-    return res.status(403).send('<h1>403 Forbidden</h1><p>Invalid API key</p>');
-  res.sendFile(path.resolve('./public/control.html'));
-});
-
-app.get('/overlay/:key', async (req, res) => {
-  const valid = await verifyApiKey(req.params.key);
-  if (!valid)
-    return res.status(403).send('<h1>403 Forbidden</h1><p>Invalid API key</p>');
-  res.sendFile(path.resolve('./public/overlay.html'));
-});
-
-app.get('/vote/:key', async (req, res) => {
-  const valid = await verifyApiKey(req.params.key);
-  if (!valid)
-    return res.status(403).send('<h1>403 Forbidden</h1><p>Invalid API key</p>');
-  res.sendFile(path.resolve('./public/vote.html'));
-});
-
-// ✅ Public API endpoint for verifying key from frontend
-app.get('/check-key/:key', async (req, res) => {
+// ✅ Secure routes (require valid API key)
+async function serveSecurePage(file, req, res) {
   const key = req.params.key;
   const valid = await verifyApiKey(key);
+  if (!valid)
+    return res.status(403).send('<h1>403 Forbidden</h1><p>Invalid API key</p>');
+  res.sendFile(path.resolve(`./public/${file}`));
+}
+
+app.get('/control/:key', (req, res) => serveSecurePage('control.html', req, res));
+app.get('/overlay/:key', (req, res) => serveSecurePage('overlay.html', req, res));
+app.get('/vote/:key', (req, res) => serveSecurePage('vote.html', req, res));
+
+// ✅ Public key verification API
+app.get('/check-key/:key', async (req, res) => {
+  const valid = await verifyApiKey(req.params.key);
   if (valid) return res.json({ status: 'ok', user: { name: 'Authorized User' } });
   res.json({ status: 'error', message: 'Invalid key' });
 });
 
+// ✅ Quiz APIs (using /qapi)
+app.get('/qapi/quizzes', (_req, res) => {
+  res.json(quizzes.map(q => ({
+    id: q.id,
+    title: q.title,
+    total: q.questions.length
+  })));
+});
 
-// ✅ Create new quiz
 app.post('/qapi/quizzes', (req, res) => {
   const { title, question, options, correctIndex, secondsTotal } = req.body;
-
   if (!title || typeof title !== 'string')
     return res.status(400).json({ error: 'Title is required' });
   if (!question || typeof question !== 'string')
@@ -113,31 +105,11 @@ app.post('/qapi/quizzes', (req, res) => {
   };
 
   quizzes.push(newQuiz);
-  fs.writeFileSync(
-    path.join(__dirname, 'data/quizzes.json'),
-    JSON.stringify(quizzes, null, 2),
-    'utf8'
-  );
+  fs.writeFileSync(dataPath, JSON.stringify(quizzes, null, 2), 'utf8');
   res.json({ ok: true, quiz: newQuiz });
 });
 
-// ✅ Quiz data
-const quizzes = JSON.parse(
-  fs.readFileSync(path.join(__dirname, 'data/quizzes.json'), 'utf8')
-);
-let activeQuizId = quizzes[0]?.id;
-let currentIndex = 0;
-
-// ✅ use /qapi instead of /api
-app.get('/qapi/quizzes', (_req, res) =>
-  res.json(quizzes.map(q => ({
-    id: q.id,
-    title: q.title,
-    total: q.questions.length
-  })))
-);
-
-// ✅ Quiz state
+// ✅ Quiz runtime state
 let state = {
   questionId: 1,
   question: 'What is the capital of France?',
@@ -151,17 +123,11 @@ let state = {
 };
 
 const voters = new Map();
-function broadcast() {
-  io.emit('state', state);
-}
-function resetVotes() {
-  state.votes = [0, 0, 0, 0];
-  voters.clear();
-}
+function broadcast() { io.emit('state', state); }
+function resetVotes() { state.votes = [0, 0, 0, 0]; voters.clear(); }
 
-// ✅ Quiz helpers
 function loadQuestion(quizId, index) {
-  const quiz = quizzes.find((q) => q.id === quizId);
+  const quiz = quizzes.find(q => q.id === quizId);
   if (!quiz || !quiz.questions[index]) return null;
   const q = quiz.questions[index];
   return {
@@ -178,7 +144,7 @@ function loadQuestion(quizId, index) {
 }
 
 function nextQuestion() {
-  const quiz = quizzes.find((q) => q.id === activeQuizId);
+  const quiz = quizzes.find(q => q.id === activeQuizId);
   if (!quiz) return;
   currentIndex++;
   if (currentIndex >= quiz.questions.length) currentIndex = 0;
@@ -196,11 +162,11 @@ function startTimer() {
   broadcast();
   ticker = setInterval(() => {
     if (state.secondsLeft > 0 && state.phase === 'running') {
-      state.secondsLeft -= 1;
+      state.secondsLeft--;
       broadcast();
       if (state.secondsLeft <= 0) {
-        state.locked = true;
         state.phase = 'reveal';
+        state.locked = true;
         stopTimer();
         broadcast();
       }
@@ -212,24 +178,19 @@ function stopTimer() {
   ticker = null;
 }
 
-// ✅ Socket.IO connections
+// ✅ Socket.IO
 io.on('connection', (socket) => {
-  const isAdmin = ADMIN_KEY
-    ? socket.handshake.auth?.adminKey === ADMIN_KEY
-    : true;
+  const isAdmin = ADMIN_KEY ? socket.handshake.auth?.adminKey === ADMIN_KEY : true;
 
   socket.emit('state', state);
 
-  socket.on('vote', (index) => {
-    if (typeof index !== 'number' || state.locked || state.phase !== 'running')
-      return;
-    if (index < 0 || index > 3) return;
-
+  socket.on('vote', (i) => {
+    if (typeof i !== 'number' || state.phase !== 'running' || state.locked) return;
+    if (i < 0 || i > 3) return;
     const prev = voters.get(socket.id);
     if (prev && prev.questionId === state.questionId) return;
-
-    state.votes[index] += 1;
-    voters.set(socket.id, { questionId: state.questionId, choice: index });
+    state.votes[i]++;
+    voters.set(socket.id, { questionId: state.questionId, choice: i });
     broadcast();
   });
 
@@ -250,37 +211,16 @@ io.on('connection', (socket) => {
   socket.on('admin:command', (cmd, payload) => {
     if (!isAdmin) return;
     switch (cmd) {
-      case 'start':
-        startTimer();
-        break;
-      case 'lock':
-        state.locked = true;
-        broadcast();
-        break;
-      case 'unlock':
-        state.locked = false;
-        broadcast();
-        break;
-      case 'reveal':
-        state.phase = 'reveal';
-        stopTimer();
-        broadcast();
-        break;
-      case 'next':
-        nextQuestion();
-        break;
-      case 'reset':
-        state = loadQuestion(activeQuizId, 0);
-        broadcast();
-        break;
-      default:
-        break;
+      case 'start': startTimer(); break;
+      case 'lock': state.locked = true; broadcast(); break;
+      case 'unlock': state.locked = false; broadcast(); break;
+      case 'reveal': state.phase = 'reveal'; stopTimer(); broadcast(); break;
+      case 'next': nextQuestion(); break;
+      case 'reset': state = loadQuestion(activeQuizId, 0); broadcast(); break;
     }
   });
 
-  socket.on('disconnect', () => {
-    voters.delete(socket.id);
-  });
+  socket.on('disconnect', () => voters.delete(socket.id));
 });
 
 server.listen(PORT, () => {
