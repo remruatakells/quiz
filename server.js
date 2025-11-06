@@ -6,8 +6,7 @@ const http = require('http');
 const fs = require('fs');
 const { Server } = require('socket.io');
 
-const fetch = (...args) =>
-  import('node-fetch').then(({ default: fetch }) => fetch(...args));
+const fetch = require('node-fetch');
 
 const app = express();
 const server = http.createServer(app);
