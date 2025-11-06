@@ -31,13 +31,17 @@ const cancelAdd = document.getElementById('cancelAdd');
 const saveQuiz = document.getElementById('saveQuiz');
 
 function loadQuizList() {
-  fetch('/api/quizzes')
-    .then(r => r.json())
+  fetch('/qapi/quizzes')
+    .then(r => {
+      if (!r.ok) throw new Error('Failed to load quizzes');
+      return r.json();
+    })
     .then(list => {
-      quizSelect.innerHTML = list.map(q =>
-        `<option value="${q.id}">${q.title} (${q.total})</option>`
-      ).join('');
-      quizSelect.value = list[0]?.id;
+      // ... your existing code to populate the dropdown
+    })
+    .catch(err => {
+      console.error('Quizzes load error:', err);
+      // Optional: show a toast / status text in the UI
     });
 }
 
@@ -88,7 +92,7 @@ copyBtn.onclick = async () => {
   setTimeout(() => copyBtn.textContent = 'Copy Vote URL', 1200);
 };
 
-fetch('/api/quizzes').then(r => r.json()).then(list => {
+fetch('/qapi/quizzes').then(r => r.json()).then(list => {
   quizSelect.innerHTML = list.map(q =>
     `<option value="${q.id}">${q.title} (${q.total})</option>`
   ).join('');
@@ -137,7 +141,7 @@ saveQuiz.onclick = async () => {
   if (!question) return alert('Please enter a question');
   if (options.some(o => !o)) return alert('All options are required');
 
-  const res = await fetch('/api/quizzes', {
+  const res = await fetch('/qapi/quizzes', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ title, question, options, correctIndex, secondsTotal })

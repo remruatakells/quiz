@@ -84,11 +84,51 @@ app.get('/check-key/:key', async (req, res) => {
   res.json({ status: 'error', message: 'Invalid key' });
 });
 
-app.get('/api/quizzes', (_req, res) => res.json(quizzes.map(q => ({
-  id: q.id,
-  title: q.title,
-  total: q.questions.length
-}))));
+// ✅ use /qapi instead of /api
+app.get('/qapi/quizzes', (_req, res) =>
+  res.json(quizzes.map(q => ({
+    id: q.id,
+    title: q.title,
+    total: q.questions.length
+  })))
+);
+
+// ✅ Create new quiz
+app.post('/qapi/quizzes', (req, res) => {
+  const { title, question, options, correctIndex, secondsTotal } = req.body;
+
+  if (!title || typeof title !== 'string')
+    return res.status(400).json({ error: 'Title is required' });
+  if (!question || typeof question !== 'string')
+    return res.status(400).json({ error: 'Question is required' });
+  if (!Array.isArray(options) || options.length !== 4)
+    return res.status(400).json({ error: 'Exactly 4 options are required' });
+
+  const id = title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  if (quizzes.find(q => q.id === id))
+    return res.status(409).json({ error: 'Quiz already exists' });
+
+  const newQuiz = {
+    id,
+    title,
+    questions: [
+      {
+        question,
+        options,
+        correctIndex: Number.isInteger(correctIndex) ? correctIndex : null,
+        secondsTotal: Number.isInteger(secondsTotal) ? secondsTotal : 15,
+      },
+    ],
+  };
+
+  quizzes.push(newQuiz);
+  fs.writeFileSync(
+    path.join(__dirname, 'data/quizzes.json'),
+    JSON.stringify(quizzes, null, 2),
+    'utf8'
+  );
+  res.json({ ok: true, quiz: newQuiz });
+});
 
 // ✅ Quiz data
 const quizzes = JSON.parse(
