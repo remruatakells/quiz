@@ -84,6 +84,12 @@ app.get('/check-key/:key', async (req, res) => {
   res.json({ status: 'error', message: 'Invalid key' });
 });
 
+app.get('/api/quizzes', (_req, res) => res.json(quizzes.map(q => ({
+  id: q.id,
+  title: q.title,
+  total: q.questions.length
+}))));
+
 // ✅ Quiz data
 const quizzes = JSON.parse(
   fs.readFileSync(path.join(__dirname, 'data/quizzes.json'), 'utf8')
