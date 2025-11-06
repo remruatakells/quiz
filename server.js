@@ -84,14 +84,6 @@ app.get('/check-key/:key', async (req, res) => {
   res.json({ status: 'error', message: 'Invalid key' });
 });
 
-// ✅ use /qapi instead of /api
-app.get('/qapi/quizzes', (_req, res) =>
-  res.json(quizzes.map(q => ({
-    id: q.id,
-    title: q.title,
-    total: q.questions.length
-  })))
-);
 
 // ✅ Create new quiz
 app.post('/qapi/quizzes', (req, res) => {
@@ -136,6 +128,15 @@ const quizzes = JSON.parse(
 );
 let activeQuizId = quizzes[0]?.id;
 let currentIndex = 0;
+
+// ✅ use /qapi instead of /api
+app.get('/qapi/quizzes', (_req, res) =>
+  res.json(quizzes.map(q => ({
+    id: q.id,
+    title: q.title,
+    total: q.questions.length
+  })))
+);
 
 // ✅ Quiz state
 let state = {
