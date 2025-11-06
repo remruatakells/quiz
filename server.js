@@ -6,8 +6,9 @@ const http = require('http');
 const fs = require('fs');
 const { Server } = require('socket.io');
 
-// ✅ Compatible with all Node versions & PM2
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+// ✅ Works in both Node 16 (PM2) and Node 18+
+const fetch = require('node-fetch');
+
 
 const app = express();
 const server = http.createServer(app);
