@@ -5,7 +5,10 @@ const express = require('express');
 const http = require('http');
 const fs = require('fs');
 const { Server } = require('socket.io');
-const fetch = require('node-fetch');
+
+// ✅ Works in both Node 16 (PM2) and Node 18+
+const fetch = (...args) =>
+  import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 const app = express();
 const server = http.createServer(app);
@@ -15,7 +18,7 @@ const PORT = process.env.PORT || 3000;
 const ADMIN_KEY = process.env.ADMIN_KEY || '';
 const MASTER_API_KEY = process.env.MASTER_API_KEY;
 
-// ✅ Load quizzes first (before defining routes)
+// ✅ Load quizzes before routes
 const dataPath = path.join(__dirname, 'data', 'quizzes.json');
 const quizzes = fs.existsSync(dataPath)
   ? JSON.parse(fs.readFileSync(dataPath, 'utf8'))
@@ -24,7 +27,7 @@ const quizzes = fs.existsSync(dataPath)
 let activeQuizId = quizzes[0]?.id || null;
 let currentIndex = 0;
 
-// ✅ Middlewares
+// ✅ Middleware
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -43,6 +46,13 @@ async function verifyApiKey(key) {
     return false;
   }
 }
+
+// ✅ Rewrite nested qapi paths (fix 404s when under /control/:key/)
+app.use((req, _res, next) => {
+  const m = req.path.match(/\/(control|overlay|vote)\/[^/]+\/qapi(\/.*)?$/);
+  if (m) req.url = req.url.replace(/\/(control|overlay|vote)\/[^/]+\/qapi/, '/qapi');
+  next();
+});
 
 // ✅ Homepage route
 app.get('/', (_req, res) =>
