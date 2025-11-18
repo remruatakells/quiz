@@ -1,115 +1,205 @@
-[
-  {
-    "id": "gk",
-    "title": "Table 1",
-    "questions": [
-      {
-        "question": "What is the capital of France?",
-        "options": [
-          "Paris",
-          "Berlin",
-          "Madrid",
-          "Rome"
-        ],
-        "correctIndex": 0,
-        "secondsTotal": 15
-      },
-      {
-        "question": "Which planet is known as the Red Planet jdfdsfdsfn ipwfjdisdjfddisho pweifdsipflkzvxcnivc iwfjvislk?",
-        "options": [
-          "Earth",
-          "Mars",
-          "Jupiter",
-          "Venus"
-        ],
-        "correctIndex": 1,
-        "secondsTotal": 15
-      }
-    ]
-  },
-  {
-    "id": "sports",
-    "title": "Table 2",
-    "questions": [
-      {
-        "question": "How many players in a soccer team?",
-        "options": [
-          "9",
-          "10",
-          "11",
-          "12"
-        ],
-        "correctIndex": 2,
-        "secondsTotal": 10
-      }
-    ]
-  },
-  {
-    "id": "test-1",
-    "title": "Table 3",
-    "questions": [
-      {
-        "question": "Test chhin",
-        "options": [
-          "ef",
-          "d",
-          "df",
-          "fd"
-        ],
-        "correctIndex": 0,
-        "secondsTotal": 15
-      }
-    ]
-  },
-  {
-    "id": "jhgb",
-    "title": "jhgb",
-    "questions": [
-      {
-        "question": "bv",
-        "options": [
-          "A",
-          "B",
-          "C",
-          "D"
-        ],
-        "correctIndex": 1,
-        "secondsTotal": 15
-      }
-    ]
-  },
-  {
-    "id": "tedfgv",
-    "title": "tedfgv",
-    "questions": [
-      {
-        "question": "efsd",
-        "options": [
-          "A",
-          "B",
-          "C",
-          "D"
-        ],
-        "correctIndex": 0,
-        "secondsTotal": 15
-      }
-    ]
-  },
-  {
-    "id": "gf",
-    "title": "gf",
-    "questions": [
-      {
-        "question": "gdf",
-        "options": [
-          "A",
-          "B",
-          "C",
-          "D"
-        ],
-        "correctIndex": 0,
-        "secondsTotal": 15
-      }
-    ]
-  }
-]
+{
+  "roundTypes": [
+    "multiple_choice",
+    "rapid_fire",
+    "visual",
+    "audio",
+    "buzzer"
+  ],
+  "tables": [
+    {
+      "id": "table1",
+      "title": "Table 1",
+      "rounds": [
+        {
+          "roundType": "multiple_choice",
+          "questions": [
+            {
+              "question": "Capital of France?",
+              "options": [
+                "Paris",
+                "Rome",
+                "Berlin",
+                "Madrid"
+              ],
+              "correctIndex": 0,
+              "seconds": 15
+            },
+            {
+              "question": "Which is the tallest mountain?",
+              "options": [
+                "K2",
+                "Everest",
+                "Kangchenjunga",
+                "Denali"
+              ],
+              "correctIndex": 1,
+              "seconds": 15
+            }
+          ]
+        },
+        {
+          "roundType": "rapid_fire",
+          "questions": [
+            {
+              "question": "Human body water percentage?",
+              "correctAnswer": "60%",
+              "seconds": 7
+            },
+            {
+              "question": "Fastest land animal?",
+              "correctAnswer": "Cheetah",
+              "seconds": 7
+            }
+          ]
+        },
+        {
+          "roundType": "visual",
+          "questions": [
+            {
+              "question": "Identify the monument",
+              "mediaUrl": "https://example.com/eiffel.jpg",
+              "correctAnswer": "Eiffel Tower",
+              "seconds": 15
+            },
+            {
+              "question": "Identify the logo",
+              "mediaUrl": "https://example.com/apple_logo.jpg",
+              "correctAnswer": "Apple Inc.",
+              "seconds": 15
+            }
+          ]
+        },
+        {
+          "roundType": "audio",
+          "questions": [
+            {
+              "question": "Identify this instrument sound",
+              "mediaUrl": "https://example.com/guitar.mp3",
+              "correctAnswer": "Guitar",
+              "seconds": 20
+            },
+            {
+              "question": "Which singer?",
+              "mediaUrl": "https://example.com/edsheeran.mp3",
+              "correctAnswer": "Ed Sheeran",
+              "seconds": 20
+            }
+          ]
+        },
+        {
+          "roundType": "buzzer",
+          "questions": [
+            {
+              "question": "Founder of Microsoft?",
+              "correctAnswer": "Bill Gates",
+              "seconds": 10
+            },
+            {
+              "question": "Who wrote Harry Potter?",
+              "correctAnswer": "J.K. Rowling",
+              "seconds": 10
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "table2",
+      "title": "Table 2",
+      "rounds": [
+        {
+          "roundType": "multiple_choice",
+          "questions": [
+            {
+              "question": "How many players in football?",
+              "options": [
+                "9",
+                "10",
+                "11",
+                "12"
+              ],
+              "correctIndex": 2,
+              "seconds": 15
+            },
+            {
+              "question": "Olympics held every?",
+              "options": [
+                "2 yrs",
+                "3 yrs",
+                "4 yrs",
+                "5 yrs"
+              ],
+              "correctIndex": 2,
+              "seconds": 15
+            }
+          ]
+        },
+        {
+          "roundType": "rapid_fire",
+          "questions": [
+            {
+              "question": "Country of cricket origin?",
+              "correctAnswer": "England",
+              "seconds": 7
+            },
+            {
+              "question": "National sport of India?",
+              "correctAnswer": "Field Hockey",
+              "seconds": 7
+            }
+          ]
+        },
+        {
+          "roundType": "visual",
+          "questions": [
+            {
+              "question": "Identify player",
+              "mediaUrl": "https://example.com/messi.jpg",
+              "correctAnswer": "Lionel Messi",
+              "seconds": 15
+            },
+            {
+              "question": "Identify trophy",
+              "mediaUrl": "https://example.com/worldcup.jpg",
+               "correctAnswer": "FIFA World Cup",
+              "seconds": 15
+            }
+          ]
+        },
+        {
+          "roundType": "audio",
+          "questions": [
+            {
+              "question": "Which sport sound?",
+              "mediaUrl": "https://example.com/tennis.mp3",
+              "correctAnswer": "Tennis",
+              "seconds": 20
+            },
+            {
+              "question": "Commentator voice belongs to?",
+              "mediaUrl": "https://example.com/commentator.mp3",
+              "correctAnswer": "Sachin Tendulkar",
+              "seconds": 20
+            }
+          ]
+        },
+        {
+          "roundType": "buzzer",
+          "questions": [
+            {
+              "question": "First Indian Olympic gold winner?",
+              "correctAnswer": "Abhinav Bindra",
+              "seconds": 10
+            },
+            {
+              "question": "Who is called Black Pearl?",
+              "correctAnswer": "Sachin Tendulkar",
+              "seconds": 10
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

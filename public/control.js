@@ -2,6 +2,13 @@ const params2 = new URLSearchParams(location.search);
 const adminKey2 = params2.get('key') || '';
 const socket = io({ auth: { adminKey: adminKey2 } });
 
+let manualEditing = false;
+
+let quizData = null;               // full JSON payload
+let tableIndex = 0;                // active table
+let roundIndex = 0;                // active round inside table
+let questionIndex = 0;             // active question inside round
+
 const $ = (s) => document.querySelector(s);
 
 const q = $('#question');
@@ -23,6 +30,9 @@ const copyBtn = $('#copy-vote-url');
 
 const liveStatus = $('#liveStatus');
 
+const roundSelect = document.getElementById('roundSelect');
+const questionSelect = document.getElementById('questionSelect');
+
 const quizSelect = document.getElementById('quizSelect');
 
 const addQuizBtn = document.getElementById('addQuizBtn');
@@ -31,29 +41,105 @@ const newQuizTitle = document.getElementById('newQuizTitle');
 const cancelAdd = document.getElementById('cancelAdd');
 const saveQuiz = document.getElementById('saveQuiz');
 
-function loadQuizList(selectedId = null) {
+function loadQuizList() {
   fetch('/qapi/quizzes')
     .then(r => r.json())
-    .then(list => {
-      quizSelect.innerHTML = list.map(q =>
-        `<option value="${q.id}">${q.title} (${q.total})</option>`
-      ).join('');
+    .then(data => {
+      quizData = data; // { roundTypes, tables }
 
-      // auto-select newly added quiz if provided
-      if (selectedId && list.find(q => q.id === selectedId)) {
-        quizSelect.value = selectedId;
-      } else {
-        quizSelect.value = list[0]?.id;
+      if (!quizData.tables || !Array.isArray(quizData.tables) || quizData.tables.length === 0) {
+        console.error("No tables in quiz data");
+        return;
       }
 
-      // trigger load of its questions & state
-      socket.emit('admin:command', 'switch', { quizId: quizSelect.value });
+      // dropdown of tables
+      quizSelect.innerHTML = quizData.tables.map((table, i) => {
+        const totalQuestions = table.rounds?.reduce(
+          (sum, round) => sum + (round.questions?.length || 0),
+          0
+        ) || 0;
+
+        return `<option value="${i}">${table.title} (${totalQuestions})</option>`;
+      }).join('');
+
+      quizSelect.value = tableIndex;
+
+      // NEW: fill round + question dropdowns
+      populateRoundSelect();
+      populateQuestionSelect();
+
+      // show first question
+      renderEditor();
+
+      // optional: notify server which table index is active
+      // if your server expects quizId (not index) you may remove this:
+      // socket.emit('admin:command', 'switch', { quizId: quizSelect.value });
     })
     .catch(err => console.error("Failed to refresh quiz list", err));
 }
 
 // Initial load
 loadQuizList();
+
+// Render editor UI based on current table/round/question
+function renderEditor() {
+  manualEditing = true;
+  if (!quizData || !quizData.tables) return;
+
+  const table = quizData.tables[tableIndex];
+  const round = table.rounds[roundIndex];
+  const qData = round.questions[questionIndex];
+
+  liveStatus.textContent =
+    `${table.title} • Round: ${round.roundType.toUpperCase()} • Q${questionIndex + 1}`;
+
+  // Shared
+  q.value = qData.question || '';
+  seconds.value = qData.seconds || 15;
+
+  if (round.roundType === 'multiple_choice') {
+    document.querySelectorAll('.mcq').forEach(e => e.style.display = 'block');
+    document.querySelectorAll('.non-mcq').forEach(e => e.style.display = 'none');
+
+    o0.value = qData.options?.[0] || '';
+    o1.value = qData.options?.[1] || '';
+    o2.value = qData.options?.[2] || '';
+    o3.value = qData.options?.[3] || '';
+    correct.value = Number.isInteger(qData.correctIndex) ? qData.correctIndex : '';
+
+  } else {
+    document.querySelectorAll('.mcq').forEach(e => e.style.display = 'none');
+    document.querySelectorAll('.non-mcq').forEach(e => e.style.display = 'block');
+
+    const answerEl = document.getElementById('answer');
+    const mediaEl = document.getElementById('mediaUrl');
+    if (answerEl) answerEl.value = qData.correctAnswer || '';
+    if (mediaEl) mediaEl.value = qData.mediaUrl || '';
+  }
+}
+function populateRoundSelect() {
+  if (!quizData || !quizData.tables) return;
+  const table = quizData.tables[tableIndex];
+
+  roundSelect.innerHTML = table.rounds.map((round, i) => {
+    const qCount = round.questions?.length || 0;
+    return `<option value="${i}">Round ${i + 1} – ${round.roundType} (${qCount})</option>`;
+  }).join('');
+
+  roundSelect.value = roundIndex;
+}
+
+function populateQuestionSelect() {
+  if (!quizData || !quizData.tables) return;
+  const table = quizData.tables[tableIndex];
+  const round = table.rounds[roundIndex];
+
+  questionSelect.innerHTML = round.questions.map((q, i) => {
+    return `<option value="${i}">Q${i + 1}</option>`;
+  }).join('');
+
+  questionSelect.value = questionIndex;
+}
 
 function fillEditorFromState(s) {
   q.value = s.question || '';
@@ -67,10 +153,14 @@ function fillEditorFromState(s) {
 
 socket.on('state', (s) => {
   liveStatus.textContent = `Q${s.questionId} • ${s.phase.toUpperCase()} • ${s.locked ? 'LOCKED' : 'UNLOCKED'} • ${s.secondsLeft}s • Votes: ${s.votes.reduce((a, b) => a + b, 0)}`;
-  fillEditorFromState(s);
+
+  if (!manualEditing) {
+    fillEditorFromState(s);
+  }
 });
 
 applyBtn.onclick = () => {
+  manualEditing = false;
   socket.emit('admin:update', {
     question: q.value.trim(),
     options: [o0.value, o1.value, o2.value, o3.value],
@@ -79,8 +169,15 @@ applyBtn.onclick = () => {
   });
 };
 
-nextBtn.onclick = () => socket.emit('admin:command', 'next');
-prevBtn.onclick = () => socket.emit('admin:command', 'prev');
+nextBtn.onclick = () => {
+  manualEditing = true;
+  socket.emit('admin:command', 'next');
+};
+
+prevBtn.onclick = () => {
+  manualEditing = true;
+  socket.emit('admin:command', 'prev');
+};
 
 resetBtn.onclick = () => {
   if (confirm('Reset the entire quiz?')) socket.emit('admin:command', 'reset');
@@ -107,6 +204,7 @@ fetch('/qapi/quizzes').then(r => r.json()).then(list => {
 });
 
 quizSelect.onchange = () => {
+  manualEditing = true;
   // Clear old editor fields
   q.value = o0.value = o1.value = o2.value = o3.value = '';
   correct.value = '';
@@ -122,6 +220,14 @@ quizSelect.onchange = () => {
     // But just in case the server broadcast is slightly delayed:
     socket.emit('admin:command', 'noop');
   }, 300);
+
+  tableIndex = Number(quizSelect.value);
+  roundIndex = 0;
+  questionIndex = 0;
+
+  populateRoundSelect();
+  populateQuestionSelect();
+  renderEditor();
 };
 
 addQuizBtn.onclick = () => {

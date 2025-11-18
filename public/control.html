@@ -18,6 +18,21 @@
         </div>
         <button id="addQuizBtn" class="accent" style="height:36px;">+ Add Quiz</button>
       </div>
+      <div class="row">
+        <div style="flex:1;">
+          <label>Select Round</label>
+          <select id="roundSelect"></select>
+        </div>
+        <div style="flex:1;">
+          <label>Question No</label>
+          <select id="questionSelect"></select>
+        </div>
+      </div>
+
+      <div id="mediaPreview" style="display:none;margin-top:10px;">
+        <img id="previewImage" style="max-width:100%;display:none;border-radius:8px;" />
+        <audio id="previewAudio" controls style="display:none;width:100%;"></audio>
+      </div>
 
       <h2>Question Editor</h2>
       <label>Question</label>

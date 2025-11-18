@@ -1,3 +1,4 @@
+//server.js
 require('dotenv').config();
 const path = require('path');
 const express = require('express');
@@ -18,12 +19,17 @@ const MASTER_API_KEY = process.env.MASTER_API_KEY;
 
 // Load quiz data
 const dataPath = path.join(__dirname, 'data', 'quizzes.json');
-const quizzes = fs.existsSync(dataPath)
-  ? JSON.parse(fs.readFileSync(dataPath, 'utf8'))
-  : [];
+let quizzes = { roundTypes: [], tables: [] };
 
-let activeQuizId = quizzes[0]?.id || null;
-let currentIndex = 0;
+if (fs.existsSync(dataPath)) {
+  quizzes = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+}
+
+
+let tableIndex = 0;
+let roundIndex = 0;
+let questionIndex = 0;
+
 
 // Middleware
 app.use(express.json());
@@ -76,11 +82,10 @@ app.get('/check-key/:key', async (req, res) => {
 
 // ========== QUIZ API ==========
 app.get('/qapi/quizzes', (_req, res) => {
-  res.json(quizzes.map(q => ({
-    id: q.id,
-    title: q.title,
-    total: q.questions.length
-  })));
+  if (!quizzes || !quizzes.tables) {
+    return res.status(500).json({ error: 'Invalid quiz file format' });
+  }
+  res.json(quizzes); // full nested structure
 });
 
 app.post('/qapi/quizzes', (req, res) => {
@@ -114,20 +119,36 @@ app.post('/qapi/quizzes', (req, res) => {
 });
 
 // ========== STATE & TIMER ==========
-function loadQuestion(quizId, index) {
-  const quiz = quizzes.find(q => q.id === quizId);
-  if (!quiz || !quiz.questions[index]) return null;
-  const q = quiz.questions[index];
+function getCurrentQuestion() {
+  const table = quizzes.tables[tableIndex];
+  const round = table.rounds[roundIndex];
+  return round.questions[questionIndex];
+}
+
+function buildStateObject() {
+  const table = quizzes.tables[tableIndex];
+  const round = table.rounds[roundIndex];
+  const q = round.questions[questionIndex];
+
   return {
-    questionId: index + 1,
-    question: q.question,
-    options: q.options,
-    correctIndex: q.correctIndex,
+    tableIndex,
+    roundIndex,
+    questionIndex,
+
+    roundType: round.roundType,   // <-- REQUIRED
+
+    questionId: questionIndex + 1,
+    question: q.question || '',
+    options: q.options || [],
+    mediaUrl: q.mediaUrl || null,
+    correctAnswer: q.correctAnswer || null,
+    correctIndex: q.correctIndex ?? null,
+
     phase: 'idle',
     locked: false,
-    secondsTotal: q.secondsTotal || 15,
-    secondsLeft: q.secondsTotal || 15,
-    votes: [0, 0, 0, 0],
+    secondsTotal: q.seconds || 15,
+    secondsLeft: q.seconds || 15,
+    votes: [0, 0, 0, 0]
   };
 }
 
@@ -148,38 +169,43 @@ const voters = new Map();
 function broadcast() { io.emit('state', state); }
 function resetVotes() { state.votes = [0, 0, 0, 0]; voters.clear(); }
 
-function prevQuestion() {
-  const quiz = quizzes.find(q => q.id === activeQuizId);
-  if (!quiz) return;
+function nextQuestion() {
+  const table = quizzes.tables[tableIndex];
+  const round = table.rounds[roundIndex];
 
-  currentIndex--;
-  if (currentIndex < 0) currentIndex = quiz.questions.length - 1;
-
-  const newQ = loadQuestion(activeQuizId, currentIndex);
-  if (newQ) {
-    state = newQ;
-    state.phase = 'idle';
-    state.locked = false;
-    resetVotes();
-    broadcast();
+  if (questionIndex < round.questions.length - 1) {
+    questionIndex++;
+  } else if (roundIndex < table.rounds.length - 1) {
+    roundIndex++;
+    questionIndex = 0;
+  } else {
+    tableIndex = (tableIndex + 1) % quizzes.tables.length;
+    roundIndex = 0;
+    questionIndex = 0;
   }
+
+  state = buildStateObject();
+  resetVotes();
+  broadcast();
 }
 
-function nextQuestion() {
-  const quiz = quizzes.find(q => q.id === activeQuizId);
-  if (!quiz) return;
+function prevQuestion() {
+  const table = quizzes.tables[tableIndex];
 
-  currentIndex++;
-  if (currentIndex >= quiz.questions.length) currentIndex = 0;
-
-  const newQ = loadQuestion(activeQuizId, currentIndex);
-  if (newQ) {
-    state = newQ;
-    state.phase = 'idle';
-    state.locked = false;
-    resetVotes();
-    broadcast();
+  if (questionIndex > 0) {
+    questionIndex--;
+  } else if (roundIndex > 0) {
+    roundIndex--;
+    questionIndex = table.rounds[roundIndex].questions.length - 1;
+  } else {
+    tableIndex = Math.max(0, tableIndex - 1);
+    roundIndex = quizzes.tables[tableIndex].rounds.length - 1;
+    questionIndex = quizzes.tables[tableIndex].rounds[roundIndex].questions.length - 1;
   }
+
+  state = buildStateObject();
+  resetVotes();
+  broadcast();
 }
 
 // ========== TIMER ==========
@@ -258,13 +284,14 @@ io.on('connection', (socket) => {
         break;
 
       case 'switch':
-        if (!payload || !payload.quizId) return;
-        if (!quizzes.find(q => q.id === payload.quizId)) return;
-        activeQuizId = payload.quizId;
-        currentIndex = 0;
-        state = loadQuestion(activeQuizId, 0);
-        resetVotes();
-        broadcast();
+        if (payload && Number.isInteger(payload.tableIndex)) {
+          tableIndex = payload.tableIndex;
+          roundIndex = 0;
+          questionIndex = 0;
+          state = buildStateObject();
+          resetVotes();
+          broadcast();
+        }
         break;
 
       case 'noop':
