@@ -1,4 +1,3 @@
-// server.js
 require('dotenv').config();
 const path = require('path');
 const express = require('express');
@@ -6,7 +5,7 @@ const http = require('http');
 const fs = require('fs');
 const { Server } = require('socket.io');
 
-// ✅ Compatible with all Node versions & PM2
+// Fetch compatible for any Node version + PM2
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 const app = express();
@@ -17,7 +16,7 @@ const PORT = process.env.PORT || 3000;
 const ADMIN_KEY = process.env.ADMIN_KEY || '';
 const MASTER_API_KEY = process.env.MASTER_API_KEY;
 
-// ✅ Load quizzes before routes
+// Load quiz data
 const dataPath = path.join(__dirname, 'data', 'quizzes.json');
 const quizzes = fs.existsSync(dataPath)
   ? JSON.parse(fs.readFileSync(dataPath, 'utf8'))
@@ -26,11 +25,11 @@ const quizzes = fs.existsSync(dataPath)
 let activeQuizId = quizzes[0]?.id || null;
 let currentIndex = 0;
 
-// ✅ Middleware
+// Middleware
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ✅ Verify API key with Zo Stream
+// Verify ZoStream Key
 async function verifyApiKey(key) {
   try {
     if (!key) return false;
@@ -38,7 +37,6 @@ async function verifyApiKey(key) {
     const response = await fetch(url);
     if (!response.ok) return false;
     const data = await response.json();
-    console.log('🔍 verifyApiKey response:', data);
     return data.status?.toLowerCase() === 'ok';
   } catch (err) {
     console.error('API key check failed:', err);
@@ -46,19 +44,17 @@ async function verifyApiKey(key) {
   }
 }
 
-// ✅ Rewrite nested qapi paths (fix 404s when under /control/:key/)
+// Fix qapi route rewriting for nested pages
 app.use((req, _res, next) => {
   const m = req.path.match(/\/(control|overlay|vote)\/[^/]+\/qapi(\/.*)?$/);
   if (m) req.url = req.url.replace(/\/(control|overlay|vote)\/[^/]+\/qapi/, '/qapi');
   next();
 });
 
-// ✅ Homepage route
-app.get('/', (_req, res) =>
-  res.sendFile(path.join(__dirname, 'public', 'index.html'))
-);
+// Homepage
+app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
-// ✅ Secure routes (require valid API key)
+// Secure frontend pages
 async function serveSecurePage(file, req, res) {
   const key = req.params.key;
   const valid = await verifyApiKey(key);
@@ -71,14 +67,14 @@ app.get('/control/:key', (req, res) => serveSecurePage('control.html', req, res)
 app.get('/overlay/:key', (req, res) => serveSecurePage('overlay.html', req, res));
 app.get('/vote/:key', (req, res) => serveSecurePage('vote.html', req, res));
 
-// ✅ Public key verification API
+// Public check key endpoint
 app.get('/check-key/:key', async (req, res) => {
   const valid = await verifyApiKey(req.params.key);
   if (valid) return res.json({ status: 'ok', user: { name: 'Authorized User' } });
   res.json({ status: 'error', message: 'Invalid key' });
 });
 
-// ✅ Quiz APIs (using /qapi)
+// ========== QUIZ API ==========
 app.get('/qapi/quizzes', (_req, res) => {
   res.json(quizzes.map(q => ({
     id: q.id,
@@ -89,12 +85,11 @@ app.get('/qapi/quizzes', (_req, res) => {
 
 app.post('/qapi/quizzes', (req, res) => {
   const { title, question, options, correctIndex, secondsTotal } = req.body;
-  if (!title || typeof title !== 'string')
-    return res.status(400).json({ error: 'Title is required' });
-  if (!question || typeof question !== 'string')
-    return res.status(400).json({ error: 'Question is required' });
+
+  if (!title) return res.status(400).json({ error: 'Title required' });
+  if (!question) return res.status(400).json({ error: 'Question required' });
   if (!Array.isArray(options) || options.length !== 4)
-    return res.status(400).json({ error: 'Exactly 4 options are required' });
+    return res.status(400).json({ error: 'Exactly 4 options required' });
 
   const id = title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
   if (quizzes.find(q => q.id === id))
@@ -114,27 +109,11 @@ app.post('/qapi/quizzes', (req, res) => {
   };
 
   quizzes.push(newQuiz);
-  fs.writeFileSync(dataPath, JSON.stringify(quizzes, null, 2), 'utf8');
+  fs.writeFileSync(dataPath, JSON.stringify(quizzes, null, 2));
   res.json({ ok: true, quiz: newQuiz });
 });
 
-// ✅ Quiz runtime state
-let state = {
-  questionId: 1,
-  question: 'What is the capital of France?',
-  options: ['Paris', 'Berlin', 'Madrid', 'Rome'],
-  correctIndex: 0,
-  phase: 'idle',
-  locked: false,
-  secondsTotal: 15,
-  secondsLeft: 15,
-  votes: [0, 0, 0, 0],
-};
-
-const voters = new Map();
-function broadcast() { io.emit('state', state); }
-function resetVotes() { state.votes = [0, 0, 0, 0]; voters.clear(); }
-
+// ========== STATE & TIMER ==========
 function loadQuestion(quizId, index) {
   const quiz = quizzes.find(q => q.id === quizId);
   if (!quiz || !quiz.questions[index]) return null;
@@ -152,17 +131,58 @@ function loadQuestion(quizId, index) {
   };
 }
 
+// Initial state
+let state = quizzes.length ? loadQuestion(activeQuizId, 0) : {
+  questionId: 1,
+  question: 'Sample Question',
+  options: ['A', 'B', 'C', 'D'],
+  correctIndex: null,
+  phase: 'idle',
+  locked: false,
+  secondsTotal: 15,
+  secondsLeft: 15,
+  votes: [0, 0, 0, 0]
+};
+
+const voters = new Map();
+function broadcast() { io.emit('state', state); }
+function resetVotes() { state.votes = [0, 0, 0, 0]; voters.clear(); }
+
+function prevQuestion() {
+  const quiz = quizzes.find(q => q.id === activeQuizId);
+  if (!quiz) return;
+
+  currentIndex--;
+  if (currentIndex < 0) currentIndex = quiz.questions.length - 1;
+
+  const newQ = loadQuestion(activeQuizId, currentIndex);
+  if (newQ) {
+    state = newQ;
+    state.phase = 'idle';
+    state.locked = false;
+    resetVotes();
+    broadcast();
+  }
+}
+
 function nextQuestion() {
   const quiz = quizzes.find(q => q.id === activeQuizId);
   if (!quiz) return;
+
   currentIndex++;
   if (currentIndex >= quiz.questions.length) currentIndex = 0;
+
   const newQ = loadQuestion(activeQuizId, currentIndex);
-  if (newQ) state = newQ;
-  broadcast();
+  if (newQ) {
+    state = newQ;
+    state.phase = 'idle';
+    state.locked = false;
+    resetVotes();
+    broadcast();
+  }
 }
 
-// ✅ Timer
+// ========== TIMER ==========
 let ticker = null;
 function startTimer() {
   stopTimer();
@@ -182,12 +202,9 @@ function startTimer() {
     }
   }, 1000);
 }
-function stopTimer() {
-  if (ticker) clearInterval(ticker);
-  ticker = null;
-}
+function stopTimer() { if (ticker) clearInterval(ticker), ticker = null; }
 
-// ✅ Socket.IO
+// ========== SOCKET.IO ==========
 io.on('connection', (socket) => {
   const isAdmin = ADMIN_KEY ? socket.handshake.auth?.adminKey === ADMIN_KEY : true;
 
@@ -208,7 +225,7 @@ io.on('connection', (socket) => {
     const { question, options, correctIndex, secondsTotal } = payload;
     if (typeof question === 'string') state.question = question;
     if (Array.isArray(options) && options.length === 4)
-      state.options = options.map((s) => String(s ?? ''));
+      state.options = options.map(s => String(s || ''));
     if (Number.isInteger(correctIndex)) state.correctIndex = correctIndex;
     if (Number.isInteger(secondsTotal)) {
       state.secondsTotal = secondsTotal;
@@ -219,13 +236,40 @@ io.on('connection', (socket) => {
 
   socket.on('admin:command', (cmd, payload) => {
     if (!isAdmin) return;
+
     switch (cmd) {
       case 'start': startTimer(); break;
       case 'lock': state.locked = true; broadcast(); break;
       case 'unlock': state.locked = false; broadcast(); break;
       case 'reveal': state.phase = 'reveal'; stopTimer(); broadcast(); break;
-      case 'next': nextQuestion(); break;
-      case 'reset': state = loadQuestion(activeQuizId, 0); broadcast(); break;
+      case 'next':
+        nextQuestion();
+        break;
+
+      case 'prev':
+        prevQuestion();
+        break;
+
+      case 'reset':
+        currentIndex = 0;
+        state = loadQuestion(activeQuizId, 0);
+        resetVotes();
+        broadcast();
+        break;
+
+      case 'switch':
+        if (!payload || !payload.quizId) return;
+        if (!quizzes.find(q => q.id === payload.quizId)) return;
+        activeQuizId = payload.quizId;
+        currentIndex = 0;
+        state = loadQuestion(activeQuizId, 0);
+        resetVotes();
+        broadcast();
+        break;
+
+      case 'noop':
+        broadcast();
+        break;
     }
   });
 
@@ -233,8 +277,8 @@ io.on('connection', (socket) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`✅ Quiz server running on: http://localhost:${PORT}`);
-  console.log(`Overlay:  /overlay/:api_key`);
-  console.log(`Control:  /control/:api_key`);
-  console.log(`Vote:     /vote/:api_key`);
+  console.log(`🚀 Server running: http://localhost:${PORT}`);
+  console.log(`🔗 Control: /control/:api_key`);
+  console.log(`🔗 Overlay: /overlay/:api_key`);
+  console.log(`🔗 Vote:    /vote/:api_key`);
 });

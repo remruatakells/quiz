@@ -11,6 +11,7 @@ const seconds = $('#seconds');
 
 const applyBtn = $('#apply');
 const nextBtn = $('#next');
+const prevBtn = $('#prev');
 const resetBtn = $('#reset');
 
 const startBtn = $('#start');
@@ -30,33 +31,37 @@ const newQuizTitle = document.getElementById('newQuizTitle');
 const cancelAdd = document.getElementById('cancelAdd');
 const saveQuiz = document.getElementById('saveQuiz');
 
-function loadQuizList() {
+function loadQuizList(selectedId = null) {
   fetch('/qapi/quizzes')
-    .then(r => {
-      if (!r.ok) throw new Error('Failed to load quizzes');
-      return r.json();
-    })
+    .then(r => r.json())
     .then(list => {
-      // ... your existing code to populate the dropdown
+      quizSelect.innerHTML = list.map(q =>
+        `<option value="${q.id}">${q.title} (${q.total})</option>`
+      ).join('');
+
+      // auto-select newly added quiz if provided
+      if (selectedId && list.find(q => q.id === selectedId)) {
+        quizSelect.value = selectedId;
+      } else {
+        quizSelect.value = list[0]?.id;
+      }
+
+      // trigger load of its questions & state
+      socket.emit('admin:command', 'switch', { quizId: quizSelect.value });
     })
-    .catch(err => {
-      console.error('Quizzes load error:', err);
-      // Optional: show a toast / status text in the UI
-    });
+    .catch(err => console.error("Failed to refresh quiz list", err));
 }
 
 // Initial load
 loadQuizList();
 
-function fillEditorFromState(s, force = false) {
-  q.value = force ? s.question : q.value || s.question;
-  o0.value = force ? s.options?.[0] : o0.value || s.options?.[0] || '';
-  o1.value = force ? s.options?.[1] : o1.value || s.options?.[1] || '';
-  o2.value = force ? s.options?.[2] : o2.value || s.options?.[2] || '';
-  o3.value = force ? s.options?.[3] : o3.value || s.options?.[3] || '';
-  correct.value = s.correctIndex !== null && s.correctIndex !== undefined
-    ? String(s.correctIndex)
-    : '';
+function fillEditorFromState(s) {
+  q.value = s.question || '';
+  o0.value = s.options?.[0] || '';
+  o1.value = s.options?.[1] || '';
+  o2.value = s.options?.[2] || '';
+  o3.value = s.options?.[3] || '';
+  correct.value = Number.isInteger(s.correctIndex) ? s.correctIndex : '';
   seconds.value = s.secondsTotal || 15;
 }
 
@@ -75,6 +80,8 @@ applyBtn.onclick = () => {
 };
 
 nextBtn.onclick = () => socket.emit('admin:command', 'next');
+prevBtn.onclick = () => socket.emit('admin:command', 'prev');
+
 resetBtn.onclick = () => {
   if (confirm('Reset the entire quiz?')) socket.emit('admin:command', 'reset');
 };
@@ -165,4 +172,5 @@ window.addEventListener('keydown', (e) => {
   if (e.key.toLowerCase() === 's') socket.emit('admin:command', 'start');
   if (e.key.toLowerCase() === 'l') socket.emit('admin:command', 'lock');
   if (e.key.toLowerCase() === 'u') socket.emit('admin:command', 'unlock');
+  if (e.key.toLowerCase() === 'p') socket.emit('admin:command', 'prev');
 });
